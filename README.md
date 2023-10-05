@@ -84,7 +84,7 @@
 8. 发布
 
    ```bash
-    HTTP_PROXY=http://localhost:20171 wrangler publish
+    HTTP_PROXY=http://localhost:20171 wrangler deploy
    ```
 
    发布成功将会显示对应的网址
@@ -193,5 +193,5 @@ $ cd my-project && npm install && npm run dev
 ```
 
 ```bash
-HTTP_PROXY=http://localhost:20171 wrangler publish
+HTTP_PROXY=http://localhost:20171 wrangler deploy
 ```
