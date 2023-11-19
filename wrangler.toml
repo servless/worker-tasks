@@ -3,7 +3,7 @@ main = "./src/index.ts"
 compatibility_date = "2023-04-16"
 
 kv_namespaces = [
-  { binding = "cookies", id = "c63f7dad63014a70847d96b900a4fc3f", preview_id = "d5d5f6d84098496ead8c89667dcea788"}
+  { binding = "cookies", id = "c63f7dad63014a70847d96b900a4fc3f"}
 ]
 
 [triggers]

@@ -1,11 +1,87 @@
 export default {
   async scheduled(event, env, ctx) {
-    // bark notify
-    const barkNotify = async msg => {
-      const bark = await env.cookies.get("bark")
-      if (bark) {
-        const barkUrl = `https://api.day.app/${bark}/${msg}`
-        await fetch(barkUrl)
+    // notify
+    const notify = async msg => {
+      // bark notify
+      const barkNotify = async () => {
+        const bark = await env.cookies.get("bark")
+        if (bark) {
+          const barkUrl = `https://api.day.app/${bark}/${encodeURIComponent(
+            msg
+          )}`
+          const response = await fetch(barkUrl)
+          return response.status === 200
+        }
+        return false
+      }
+
+      // lark notify
+      const larkNotify = async () => {
+        const lark = await env.cookies.get("lark")
+        if (lark) {
+          const larkUrl = `https://open.larksuite.com/open-apis/bot/v2/hook/${lark}`
+          // post
+          const data = {
+            msg_type: "text",
+            content: {
+              text: msg,
+            },
+          }
+          // post json data
+          const response = await fetch(larkUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          })
+          return response.status === 200
+        }
+        return false
+      }
+
+      // feishu notify
+      const feishuNotify = async () => {
+        const feishu = await env.cookies.get("feishu")
+        if (feishu) {
+          const feishuUrl = `https://open.feishu.cn/open-apis/bot/v2/hook/${lark}`
+          // post
+          const data = {
+            msg_type: "text",
+            content: {
+              text: msg,
+            },
+          }
+          // post json data
+          const response = await fetch(feishuUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          })
+          return response.status === 200
+        }
+        return false
+      }
+
+      try {
+        const results = await Promise.allSettled([
+          barkNotify(),
+          larkNotify(),
+          feishuNotify(),
+        ])
+        const tasks = ["bark", "lark", "feishu"]
+
+        results.forEach((result, index) => {
+          if (result.status === "fulfilled") {
+            console.log(`Notify ${tasks[index]} OK:`, result)
+          } else {
+            console.error(`Notify ${tasks[index]} Failed:`, result)
+          }
+        })
+      } catch (error) {
+        console.error("Error during notification:", error)
       }
     }
 
@@ -68,18 +144,49 @@ export default {
 
       const resp = await handleRequest()
       if (resp.status === 200) {
-        await barkNotify("V2EX Check-in Successful")
+        await notify("V2EX Check-in Successful")
+        return true
       } else {
         const failedMsg = await resp.text()
         console.error("v2ex failed: " + failedMsg)
-        await barkNotify("V2EX Check-in Failed: " + failedMsg)
+        await notify("V2EX Check-in Failed: " + failedMsg)
+        return false
       }
-
-      return resp
     }
 
-    const results = await Promise.allSettled([v2exCheckIn()])
-    const tasks = ["v2ex"]
+    // fanli check in
+    const fanliCheckIn = async () => {
+      const cookies = await env.cookies.get("fanli")
+      if (!cookies) {
+        return false
+      }
+
+      const fanliUrl = "https://huodong.fanli.com/sign82580"
+      const checkInUrl = `${fanliUrl}/ajaxSetUserSign`
+
+      const userAgent =
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Fanli/7.19.71.6 (ID:1-1069183-65912421924760-17-0; WVC:WK; SCR:1170*2532-3.0)"
+      const headers = {
+        "User-Agent": userAgent,
+        Cookie: cookies,
+        Referer: fanliUrl,
+      }
+      const resp = await fetch(checkInUrl, { headers })
+      if (resp.status === 200) {
+        const failedMsg = await resp.text()
+        console.log("fanli ok: " + failedMsg)
+        await notify("Fanli Check-in Successful")
+        return true
+      } else {
+        const failedMsg = await resp.text()
+        console.error("fanli failed: " + failedMsg)
+        await notify("Fanli Check-in Failed: " + failedMsg)
+        return false
+      }
+    }
+
+    const results = await Promise.allSettled([v2exCheckIn(), fanliCheckIn()])
+    const tasks = ["v2ex", "fanli"]
     results.forEach((result, index) => {
       if (result.status === "fulfilled") {
         console.log(`Result ${tasks[index]} OK:`, result)

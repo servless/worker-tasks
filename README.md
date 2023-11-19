@@ -1,10 +1,13 @@
-# 签到自动化
+# 自动化签到
 
-利用 `CloudFlare Workers`，使**签到**自动化。
+基于 `CloudFlare Workers` 的自动化**签到**。
 
 ## 当前支持
 
-- https://v2ex.com
+| 服务名   | 网址              |     | 说明               |
+| :------- | :---------------- | :-- | :----------------- |
+| v2ex     | https://v2ex.com  |     | 获取网页的 cookie  |
+| 返利 App | https://fanli.com |     | 获取 App 的 cookie |
 
 ## 布署教程
 
@@ -28,7 +31,12 @@
 4. 拉取本项目,并进入该项目目录：
 
    ```bash
-   git clone https://github.com/devdoz/worker-checkin.git
+   # 国内
+   git clone https://jihulab.com/idevsig/worker-checkin.git
+
+   # 海外
+   git clone https://github.com/idevsig/worker-checkin.git
+
    cd worker-checkin
    ```
 
@@ -38,8 +46,7 @@
 
    1. **创建 KV，并设置 cookie 值**
 
-      1. 先通过后面的教程，获取到 `v2ex` 的 `cookie`
-      2. 创建名为 `cookies` 的 `namespace`
+      1. 创建名为 `cookies` 的 `namespace`
 
          ```bash
             wrangler kv:namespace create cookies
@@ -65,10 +72,18 @@
             ]
          ```
 
-   2. 将 `v2ex` 的 `cookie` 值保存到 `KV namespace`
+   2. 先通过后面的教程，获取到*对应服务*的 `cookie`
+
+   3. 将*对应服务*的 `cookie` 值保存到 `KV namespace`
 
       ```bash
+         # v2ex
+         ## 通过电脑浏览器抓包
          wrangler kv:key put --binding=cookies 'v2ex' '<COOKE_VALUE>'
+
+         # fanli
+         ## 通过软件抓包接口 https://huodong.fanli.com/sign82580/ajaxSetUserSign ，获取 cookies 值（只需 “PHPSESSID=xxx;” 这部分即可）
+         wrangler kv:key put --binding=cookies 'fanli' '<COOKE_VALUE>'
       ```
 
 7. 修改定时任务相关信息
@@ -84,7 +99,7 @@
 8. 发布
 
    ```bash
-    HTTP_PROXY=http://localhost:20171 wrangler deploy
+    wrangler deploy
    ```
 
    发布成功将会显示对应的网址
@@ -111,19 +126,38 @@
 wrangler kv:key put --binding=cookies 'bark' '<BARK_TOKEN>'
 ```
 
+2. [**Lark**](https://open.larksuite.com/document/client-docs/bot-v3/add-custom-bot#756b882f)
+
+```bash
+# 设置 brak token
+wrangler kv:key put --binding=cookies 'lark' '<LARK_TOKEN>'
+```
+
+3. [**飞书**](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot#756b882f)
+
+```bash
+# 设置 brak token
+wrangler kv:key put --binding=cookies 'feishu' '<FEISHU_TOKEN>'
+```
+
 若不需要通知，删除 `key` 即可
 
 ```bash
+# 以 bark 为例
 wrangler kv:key delete --binding=cookies 'bark'
 ```
 
 ## 帮助
 
-### 获取 `cookie` 的方法
+### 获取网页 `cookie` 的方法
 
 1. 首先使用 chrome 浏览器打开网站（比如为 `xxx.com`）， 登录账号。
 2. Windows / Linux 系统可按 `F12` 快捷键打开开发者工具；Mac 快捷键 `option + command + i`；Linux 还有另一个快捷键 `Ctrl + Shift + i`。笔记本电脑可能需要再加一个 `fn` 键。
 3. 选择开发者工具 `Network`，刷新页面，选择第一个`xxx.com`, 找到 `Requests Headers` 里的 `Cookie`。
+
+### 获取 App `cookie` 的方法
+
+使用 **[Reqable](https://reqable.com/)** 软件抓包获取对应的 cookie 值。
 
 ### 调试
 
@@ -193,5 +227,5 @@ $ cd my-project && npm install && npm run dev
 ```
 
 ```bash
-HTTP_PROXY=http://localhost:20171 wrangler deploy
+wrangler deploy
 ```
