@@ -4,10 +4,11 @@
 
 ## 当前支持
 
-| 服务名   | 网址              |     | 说明               |
-| :------- | :---------------- | :-- | :----------------- |
-| v2ex     | https://v2ex.com  |     | 获取网页的 cookie  |
-| 返利 App | https://fanli.com |     | 获取 App 的 cookie |
+| 服务名称                                | 服务简介       | 说明                                                                        |
+| :-------------------------------------- | :------------- | :-------------------------------------------------------------------------- |
+| [MegStudio](https://studio.brainpp.com) | AI 免费算力    | 账号与密码，需自建 [OCR API 服务](https://github.com/sml2h3/ocr_api_server) |
+| [v2ex](https://v2ex.com)                | 开发者社交平台 | 获取网页的 Cookie                                                           |
+| [返利 App](https://fanli.com)           | 购物返利平台   | 获取 App 的 Cookie                                                          |
 
 ## 布署教程
 
