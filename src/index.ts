@@ -171,16 +171,19 @@ export default {
         Cookie: cookies,
         Referer: fanliUrl,
       }
-      const resp = await fetch(checkInUrl, { headers })
-      if (resp.status === 200) {
-        const failedMsg = await resp.text()
-        console.log("fanli ok: " + failedMsg)
-        await notify("Fanli Check-in Successful")
-        return true
-      } else {
-        const failedMsg = await resp.text()
-        console.error("fanli failed: " + failedMsg)
-        await notify("Fanli Check-in Failed: " + failedMsg)
+
+      try {
+        const resp = await fetch(checkInUrl, { headers })
+        const json = JSON.parse(await resp.text())
+        console.log(json)
+        if (json.status === 1) {
+          await notify("Fanli Check-in Successful")
+          return true
+        }
+        throw new Error("Sesson Expired")
+      } catch (error) {
+        console.error(error)
+        await notify("Fanli Check-in Failed")
         return false
       }
     }
