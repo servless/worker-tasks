@@ -78,13 +78,20 @@
    3. 将*对应服务*的 `cookie` 值保存到 `KV namespace`
 
       ```bash
-         # v2ex
+         # V2ex
          ## 通过电脑浏览器抓包
          wrangler kv:key put --binding=cookies 'v2ex' '<COOKE_VALUE>'
 
-         # fanli
+         # Fanli
          ## 通过软件抓包接口 https://huodong.fanli.com/sign82580/ajaxSetUserSign ，获取 cookies 值（只需 “PHPSESSID=xxx;” 这部分即可）
          wrangler kv:key put --binding=cookies 'fanli' '<COOKE_VALUE>'
+
+         # MegStudio
+         ## 使用账号和密码，需要自建 OCR API 服务：https://github.com/sml2h3/ocr_api_server。
+         proxychains wrangler kv:key put --binding=cookies 'megstudio_username' 'USERNAME'
+         proxychains wrangler kv:key put --binding=cookies 'megstudio_password' 'PASSWORD'
+         proxychains wrangler kv:key put --binding=cookies 'ocr_url' "https://ocr.xx.com"
+
       ```
 
 7. 修改定时任务相关信息
