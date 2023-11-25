@@ -4,11 +4,12 @@
 
 ## 当前支持
 
-| 服务名称                                | 服务简介       | 说明                                                                        |
-| :-------------------------------------- | :------------- | :-------------------------------------------------------------------------- |
-| [MegStudio](https://studio.brainpp.com) | AI 免费算力    | 账号与密码，需自建 [OCR API 服务](https://github.com/sml2h3/ocr_api_server) |
-| [v2ex](https://v2ex.com)                | 开发者社交平台 | 获取网页的 Cookie                                                           |
-| [返利 App](https://fanli.com)           | 购物返利平台   | 获取 App 的 Cookie                                                          |
+| 服务名称                                | 服务简介                     | 说明                                                                        |
+| :-------------------------------------- | :--------------------------- | :-------------------------------------------------------------------------- |
+| [MegStudio](https://studio.brainpp.com) | AI 免费算力                  | 账号与密码，需自建 [OCR API 服务](https://github.com/sml2h3/ocr_api_server) |
+| [v2ex](https://v2ex.com)                | 开发者社交平台               | 获取网页的 Cookie                                                           |
+| [返利 App](https://fanli.com)           | 购物返利平台                 | 获取 App 的 Cookie                                                          |
+| 域名可注册检测                          | 查询单个或多个域名是否可注册 | 自己设置域名                                                                |
 
 ## 布署教程
 
@@ -91,6 +92,10 @@
          proxychains wrangler kv:key put --binding=cookies 'megstudio_username' 'USERNAME'
          proxychains wrangler kv:key put --binding=cookies 'megstudio_password' 'PASSWORD'
          proxychains wrangler kv:key put --binding=cookies 'ocr_url' "https://ocr.xx.com"
+
+         # Find Domains
+         ## 查找域名是否可注册
+         wrangler kv:key put --binding=cookies 'domains' "idev.top,idev258.com"
 
       ```
 
