@@ -2,19 +2,32 @@ import notify from "../notify"
 
 // megstudio check in
 const megstudio = async env => {
-  const username = await env.cookies.get("megstudio_username")
-  if (!username) {
+  const userinfo = await env.data.get("megstudio")
+  if (!userinfo) {
     return false
   }
-  const password = await env.cookies.get("megstudio_password")
-  if (!password) {
-    return false
-  }
-  const ocr_url = await env.cookies.get("ocr_url")
+  const ocr_url = await env.data.get("ocr_url")
   if (!ocr_url) {
     return false
   }
 
+  let accounts = userinfo.split(";")
+  const message: string[] = []
+  for (const accountInfo of accounts) {
+    const [username, password] = accountInfo.split(",")
+    if (!username || !password) {
+      continue
+    }
+    const success = await task(username, password, ocr_url)
+    message.push(`${username} 签到${success ? "成功" : "失败"} \n`)
+  }
+
+  await notify(env, "「MegStudio」\n" + message.join(""))
+  return true
+}
+
+const task = async (username, password, ocr_url) => {
+  // base64 string to uint8array
   const b64decode = base64String => {
     const binaryString = atob(base64String)
     const length = binaryString.length
@@ -27,6 +40,7 @@ const megstudio = async env => {
     return uint8Array
   }
 
+  // checkin
   const checkin = async (uid, token, cookie) => {
     const checkin_api = `https://studio.brainpp.com/api/v1/users/${uid}/point-actions/checkin`
     const headers = {
@@ -41,25 +55,32 @@ const megstudio = async env => {
     })
 
     console.log(response.status)
-    if (response.status === 200 || response.status === 403) {
-      return true
+    if (response.status === 200) {
+      return { success: true, message: "MegStudio 签到成功" }
     }
-    return false
+    if (response.status === 403) {
+      return { success: true, message: "MegStudio 已签到过" }
+    }
+    return { success: false, message: "MegStudio 签到失败" }
   }
 
+  // login
   const login = async () => {
     const login_url =
       "https://studio.brainpp.com/api/authv1/login?redirectUrl=https://studio.brainpp.com/"
     const login_response = await fetch(login_url)
     if (login_response.status !== 200) {
-      return false
+      return { success: false, message: "MegStudio 无法获取登录信息" }
     }
 
     const parsed_url = new URL(login_response.url)
     const query_params = parsed_url.searchParams
     const login_challenge_value = query_params.get("login_challenge") || ""
     if (!login_challenge_value) {
-      return false
+      return {
+        success: false,
+        message: "MegStudio 无法获取 login_challenge 参数值",
+      }
     }
 
     const current_time = String(Math.floor(Date.now()))
@@ -68,7 +89,10 @@ const megstudio = async env => {
     const captcha_response = await fetch(captcha_url)
     const captcha_data: any = await captcha_response.json()
     if (captcha_data.error_code !== 0) {
-      return false
+      return {
+        success: false,
+        message: "MegStudio 无法获取验证码信息",
+      }
     }
 
     const biz_id = captcha_data.data.biz_id
@@ -87,7 +111,10 @@ const megstudio = async env => {
     const captcha = await captcha_response_code.text()
     // console.log(`captcha: ${captcha}`)
     if (captcha == "" || captcha.length != 4) {
-      return false
+      return {
+        success: false,
+        message: "MegStudio 无法提取验证码字符串",
+      }
     }
 
     const login_api = "https://account.megvii.com/api/v1/login"
@@ -110,15 +137,24 @@ const megstudio = async env => {
       body: JSON.stringify(login_data),
     })
     if (login_data_response.status !== 200) {
-      return false
+      return {
+        success: false,
+        message: `MegStudio 登录失败: ${await login_data_response.text()}`,
+      }
     }
 
     const login_resp: any = await login_data_response.json()
     if (login_resp.error_code !== 0) {
-      return false
+      return {
+        success: false,
+        message: `MegStudio 登录失败: ${login_resp.error_msg}`,
+      }
     }
     if (login_resp.data.code !== 0) {
-      return false
+      return {
+        success: false,
+        message: `MegStudio 登录失败: ${login_resp.data.code}`,
+      }
     }
     const redirect_url = login_resp.data.redirect
     let session_cookie = login_data_response.headers.get("Set-Cookie") || ""
@@ -162,11 +198,17 @@ const megstudio = async env => {
       resp_text
     )
     if (!csrf_token_match) {
-      return false
+      return {
+        success: false,
+        message: "MegStudio 无法获取 X-CSRF-Token",
+      }
     }
     const csrf_token = csrf_token_match[1]
     if (!csrf_token) {
-      return false
+      return {
+        success: false,
+        message: "MegStudio 无法获取 X-CSRF-Token 值",
+      }
     }
 
     const req_headers = {
@@ -183,35 +225,37 @@ const megstudio = async env => {
     })
 
     if (response.status !== 200) {
-      return false
+      return {
+        success: false,
+        message: "MegStudio 获取用户信息失败",
+      }
     }
     const user_data: any = await response.json()
     const uid = user_data.data.id
     return checkin(uid, csrf_token, session_cookie)
   }
 
+  // failed. retry 5 times
   let index = 0
-  let checked = false
+  let done = false
+  let msg = ""
   while (true) {
-    checked = await login()
-    if (checked || index >= 5) {
+    const resp = await login()
+    let { success, message } = resp
+    done = success
+    msg = message
+    if (done || index >= 5) {
       break
     } else {
       index = index + 1
     }
   }
 
-  try {
-    if (checked) {
-      await notify(env, "MegStudio Check-in Successful")
-      return true
-    }
-    throw new Error("Sesson Expired")
-  } catch (error) {
-    console.error(error)
-    await notify(env, "MegStudio Check-in Failed")
-    return false
+  if (!done) {
+    console.error(msg)
   }
+
+  return done
 }
 
 export default megstudio

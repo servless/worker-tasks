@@ -1,6 +1,28 @@
 import notify from "../notify"
 
-const find = async domain => {
+// find domains
+const domain = async env => {
+  const findomain = await env.data.get("domains")
+  if (!findomain) {
+    return false
+  }
+
+  const domains = findomain.split(",")
+  console.log(domains)
+  if (domains.length === 0) {
+    return false
+  }
+
+  const message: string[] = []
+  for (const domainName of domains) {
+    message.push((await task(domainName)) + "\n")
+  }
+
+  await notify(env, "「Find Domain」\n" + message.join(""))
+  return true
+}
+
+const task = async domainName => {
   const headers = {
     accept: "application/json, text/javascript, */*; q=0.01",
     "accept-encoding": "gzip, deflate, br",
@@ -21,16 +43,16 @@ const find = async domain => {
   }
 
   const ispUrl = "https://www.west.xyz"
-  const reqUrl = `${ispUrl}/web/whois/whoisinfo?domain=${domain}&server=&refresh=0`
+  const reqUrl = `${ispUrl}/web/whois/whoisinfo?domain=${domainName}&server=&refresh=0`
 
   let available = false
   let regdate = ""
   let expdate = ""
-  let err = 1
+  let status = ""
 
   try {
     const response = await fetch(reqUrl, { headers })
-    if (!response.ok) {
+    if (response.status !== 200) {
       throw new Error(`status code ${response.status}`)
     }
 
@@ -38,48 +60,25 @@ const find = async domain => {
 
     if (resp.code === 200 || resp.code === 100) {
       available = resp.regdate === ""
+      status = resp.status
       if (!available) {
         regdate = resp.regdate
         expdate = resp.expdate
       }
-      // 返回码
-      err = 0
     } else {
       throw new Error(`resp code ${resp.code}`)
     }
   } catch (e) {
-    console.log(`Error: find domain: ${domain}, err:${e}`)
-    available = false
+    console.log(`Error: find domain: ${domainName}, err:${e}`)
     regdate = ""
     expdate = ""
-    err = 1
+    available = false
   }
 
-  return `domain: ${domain}, available: ${available}`
+  return `${domainName} ${
+    available ? "可" : "不可"
+  }注册，过期时间（${expdate}），状态（${status}）`
   // return available
-}
-
-// domain find
-const domain = async env => {
-  const findomain = await env.cookies.get("domains")
-  if (!findomain) {
-    return false
-  }
-
-  const domains = findomain.split(",")
-  console.log(domains)
-  if (domains.length === 0) {
-    return false
-  }
-
-  const info: string[] = []
-  for (const domain of domains) {
-    info.push((await find(domain)) + "\n")
-    // info.push(`domain: ${domain}, available: ${await find(domain)}\n`)
-  }
-
-  await notify(env, "Domains: \n" + info.join(""))
-  return true
 }
 
 export default domain

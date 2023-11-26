@@ -1,10 +1,10 @@
-name = "checkin" # todo
+name = "tasks" # todo
 main = "./src/index.ts"
 compatibility_date = "2023-04-16"
 
 kv_namespaces = [
-  { binding = "cookies", id = "c63f7dad63014a70847d96b900a4fc3f"}
+  { binding = "data", id = "8c7d7ee9b6bb4f8fa3ca9f30eaf8d897"}
 ]
 
 [triggers]
-crons = ["15 */6 * * *"]
+crons = ["15 */5 * * *"]

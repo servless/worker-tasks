@@ -2,18 +2,28 @@ import notify from "../notify"
 
 // v2ex check in
 const v2ex = async env => {
-  const cookie = await env.cookies.get("v2ex")
+  const cookie = await env.data.get("v2ex")
   if (!cookie) {
     return false
   }
 
+  if (await task(cookie)) {
+    await notify(env, "V2EX 签到成功")
+    return true
+  } else {
+    await notify(env, "V2EX 签到失败")
+    return false
+  }
+}
+
+const task = async cookie => {
   const userAgent =
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36"
   const v2exDomain = "https://www.v2ex.com"
   const dailyUrl = v2exDomain + "/mission/daily"
   const redeemUrl = v2exDomain + "/mission/daily/redeem"
 
-  async function getDailyReward() {
+  const getDailyReward = async () => {
     const headers = {
       "User-Agent": userAgent,
       Cookie: cookie,
@@ -44,30 +54,18 @@ const v2ex = async env => {
     response = await fetch(dailyUrl, { headers })
     html = await response.text()
 
-    if (!html.includes("每日登录奖励已领取")) {
-      return { success: false, message: "每日登录奖励领取失败" }
+    if (html.includes("每日登录奖励已领取")) {
+      return { success: true, message: "每日登录奖励领取成功" }
     }
-
-    return { success: true, message: "每日登录奖励领取成功" }
+    return { success: false, message: "每日登录奖励领取失败" }
   }
 
-  async function handleRequest() {
-    const result = await getDailyReward()
-    return new Response(result.message, {
-      status: result.success ? 200 : 400,
-    })
-  }
-
-  const resp = await handleRequest()
-  if (resp.status === 200) {
-    await notify(env, "V2EX Check-in Successful")
+  const resp = await getDailyReward()
+  if (resp.success) {
     return true
-  } else {
-    const failedMsg = await resp.text()
-    console.error("v2ex failed: " + failedMsg)
-    await notify(env, "V2EX Check-in Failed: " + failedMsg)
-    return false
   }
+  console.error(resp.message)
+  return false
 }
 
 export default v2ex

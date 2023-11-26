@@ -1,6 +1,6 @@
-# 自动化签到
+# 自动化任务
 
-基于 `CloudFlare Workers` 的自动化**签到**。
+基于 `CloudFlare Workers` 的自动化**任务**。
 
 ## 当前支持
 
@@ -8,8 +8,7 @@
 | :-------------------------------------- | :--------------------------- | :-------------------------------------------------------------------------- |
 | [MegStudio](https://studio.brainpp.com) | AI 免费算力                  | 账号与密码，需自建 [OCR API 服务](https://github.com/sml2h3/ocr_api_server) |
 | [v2ex](https://v2ex.com)                | 开发者社交平台               | 获取网页的 Cookie                                                           |
-| [返利 App](https://fanli.com)           | 购物返利平台                 | 获取 App 的 Cookie                                                          |
-| 域名可注册检测                          | 查询单个或多个域名是否可注册 | 自己设置域名                                                                |
+| **域名可注册检测**                      | 查询单个或多个域名是否可注册 | 手动设置相关域名                                                            |
 
 ## 布署教程
 
@@ -34,24 +33,24 @@
 
    ```bash
    # 国内
-   git clone https://jihulab.com/idevsig/worker-checkin.git
+   git clone https://jihulab.com/idevsig/worker-tasks.git
 
    # 海外
-   git clone https://github.com/idevsig/worker-checkin.git
+   git clone https://github.com/idevsig/worker-tasks.git
 
-   cd worker-checkin
+   cd worker-tasks
    ```
 
-5. 修改 `wrangler.toml` 文件中的 `name`（proj）为服务名 `xxx`（访问域名为：`proj.xxx.workers.dev`）
+5. 修改 `wrangler.toml` 文件中的 `name`（proj）为服务名 `tasks`（访问域名为：`tasks.xxx.workers.dev`）
 
 6. 创建 **Workers** 和 **KV**，并绑定 `KV` 到 `Workers`
 
-   1. **创建 KV，并设置 cookie 值**
+   1. **创建 KV，并设置参数值**
 
-      1. 创建名为 `cookies` 的 `namespace`
+      1. 创建名为 `data` 的 `namespace`（最终会在前缀加上*服务名*，即为 `tasks-data`）
 
          ```bash
-            wrangler kv:namespace create cookies
+            wrangler kv:namespace create data
          ```
 
          得到
@@ -59,43 +58,39 @@
          ```bash
             ⛅️ wrangler 2.15.1
             --------------------
-            🌀 Creating namespace with title "checkin-cookies"
+            🌀 Creating namespace with title "tasks-data"
             ✨ Success!
             Add the following to your configuration file in your kv_namespaces array:
-            { binding = "cookies", id = "c63f7dad63014a70847d96b900a4fc3f" }
+            { binding = "data", id = "8c7d7ee9b6bb4f8fa3ca9f30eaf8d897" }
+
          ```
 
          将上述命令得到的 `kv_namespaces` 保存到 `wrangler.toml` 中，即
 
          ```bash
             # 替换当前项目该文件内相关的数据，即只需要将 id 的值替换为上一步骤得到的值
-            kv_namespaces = [
-            { binding = "cookies", id = "c63f7dad63014a70847d96b900a4fc3f" }
-            ]
+            { binding = "data", id = "8c7d7ee9b6bb4f8fa3ca9f30eaf8d897" }
          ```
 
-   2. 先通过后面的教程，获取到*对应服务*的 `cookie`
+   2. 先通过后面的教程，获取到*对应服务*的 `cookie`、`tokens`和参数值，填充到 `tasks-data` 的 **KV** 中。
 
-   3. 将*对应服务*的 `cookie` 值保存到 `KV namespace`
+   3. 将*对应服务*的**数据**值保存到 `KV namespace`
 
       ```bash
          # V2ex
-         ## 通过电脑浏览器抓包
-         wrangler kv:key put --binding=cookies 'v2ex' '<COOKE_VALUE>'
-
-         # Fanli
-         ## 通过软件抓包接口 https://huodong.fanli.com/sign82580/ajaxSetUserSign ，获取 cookies 值（只需 “PHPSESSID=xxx;” 这部分即可）
-         wrangler kv:key put --binding=cookies 'fanli' '<COOKE_VALUE>'
+         ## 通过电脑浏览器提取 cookie
+         wrangler kv:key put --binding=data 'v2ex' '<COOKE_VALUE>'
 
          # MegStudio
          ## 使用账号和密码，需要自建 OCR API 服务：https://github.com/sml2h3/ocr_api_server。
-         proxychains wrangler kv:key put --binding=cookies 'megstudio_username' 'USERNAME'
-         proxychains wrangler kv:key put --binding=cookies 'megstudio_password' 'PASSWORD'
-         proxychains wrangler kv:key put --binding=cookies 'ocr_url' "https://ocr.xx.com"
+         ## 支持多账号。用户名和密码之间使用分号分隔，多账号之间使用分号分隔。
+         wrangler kv:key put --binding=data 'megstudio' 'USERNAME1,PASSWORD1;USERNAME2,PASSWORD2''USERNAME'
+         wrangler kv:key put --binding=data 'ocr_url' "https://ocr.xx.com"
 
          # Find Domains
-         ## 查找域名是否可注册
-         wrangler kv:key put --binding=cookies 'domains' "idev.top,idev258.com"
+         ## 查询域名是否可注册。
+         ## 支持多域名。域名之间使用逗号分隔。
+         wrangler kv:key put --binding=data 'domains' "example1.com,example1.com"
 
       ```
 
@@ -122,42 +117,42 @@
    ⛅️ wrangler 2.13.0
         --------------------
         Total Upload: 0.66 KiB / gzip: 0.35 KiB
-        Uploaded proj (1.38 sec)
-        Published proj (4.55 sec)
-                https://proj.xxx.workers.dev
+        Uploaded tasks (1.38 sec)
+        Published tasks (4.55 sec)
+                https://tasks.xxx.workers.dev
         Current Deployment ID:  xxxx.xxxx.xxxx.xxxx
    ```
 
 ## 选项
 
-### 通知
+### 推送通知
 
 1. [**Bark** (iOS 端)](https://bark.day.app/)
 
 ```bash
 # 设置 brak token
-wrangler kv:key put --binding=cookies 'bark' '<BARK_TOKEN>'
+wrangler kv:key put --binding=data 'bark' '<BARK_TOKEN>'
 ```
 
 2. [**Lark**](https://open.larksuite.com/document/client-docs/bot-v3/add-custom-bot#756b882f)
 
 ```bash
 # 设置 brak token
-wrangler kv:key put --binding=cookies 'lark' '<LARK_TOKEN>'
+wrangler kv:key put --binding=data 'lark' '<LARK_TOKEN>'
 ```
 
 3. [**飞书**](https://open.feishu.cn/document/client-docs/bot-v3/add-custom-bot#756b882f)
 
 ```bash
 # 设置 brak token
-wrangler kv:key put --binding=cookies 'feishu' '<FEISHU_TOKEN>'
+wrangler kv:key put --binding=data 'feishu' '<FEISHU_TOKEN>'
 ```
 
-若不需要通知，删除 `key` 即可
+若不需要通知，删除对应的 `key` 即可
 
 ```bash
 # 以 bark 为例
-wrangler kv:key delete --binding=cookies 'bark'
+wrangler kv:key delete --binding=data 'bark'
 ```
 
 ## 帮助
@@ -177,28 +172,28 @@ wrangler kv:key delete --binding=cookies 'bark'
 1. 创建预览环境
 
    ```bash
-   wrangler kv:namespace create cookies --preview
+   wrangler kv:namespace create data --preview
    ```
 
    得到
 
    ```bash
-   { binding = "cookies", preview_id = "d5d5f6d84098496ead8c89667dcea788" }
+   { binding = "data", preview_id = "d5d5f6d84098496ead8c89667dcea788" }
    ```
 
    将 `preview_id` 添加到 `warngler.toml`，即
 
    ```bash
    kv_namespaces = [
-   { binding = "cookies", id = "c63f7dad63014a70847d96b900a4fc3f", preview_id = "d5d5f6d84098496ead8c89667dcea788"}
+   { binding = "data", id = "c63f7dad63014a70847d96b900a4fc3f", preview_id = "d5d5f6d84098496ead8c89667dcea788"}
    ]
    ```
 
 2. 将相关值保存到 `KV namespace`，即每条命令后均添加参数 `--preview`
 
    ```bash
-      wrangler kv:key put --binding=cookies 'v2ex' '<COOKE_VALUE>' --preview
-      wrangler kv:key put --binding=cookies 'bark' '<BARK_TOKEN>' --preview
+      wrangler kv:key put --binding=data 'v2ex' '<COOKE_VALUE>' --preview
+      wrangler kv:key put --binding=data 'bark' '<BARK_TOKEN>' --preview
    ```
 
 3. 执行调试命令
@@ -214,7 +209,7 @@ wrangler kv:key delete --binding=cookies 'bark'
    --------------------
    Your worker has access to the following bindings:
    - KV Namespaces:
-   - cookies: d5d5f6d84098496ead8c89667dcea788
+   - data: d5d5f6d84098496ead8c89667dcea788
    ⬣ Listening at http://0.0.0.0:8787
    - http://127.0.0.1:8787
    - http://192.168.33.66:8787

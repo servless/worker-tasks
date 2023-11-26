@@ -2,7 +2,7 @@
 const notify = async (env, msg) => {
   // bark notify
   const barkNotify = async () => {
-    const bark = await env.cookies.get("bark")
+    const bark = await env.data.get("bark")
     if (bark) {
       const barkUrl = `https://api.day.app/${bark}/${encodeURIComponent(msg)}`
       const response = await fetch(barkUrl)
@@ -13,7 +13,7 @@ const notify = async (env, msg) => {
 
   // lark notify
   const larkNotify = async () => {
-    const lark = await env.cookies.get("lark")
+    const lark = await env.data.get("lark")
     if (lark) {
       const larkUrl = `https://open.larksuite.com/open-apis/bot/v2/hook/${lark}`
       // post
@@ -38,7 +38,7 @@ const notify = async (env, msg) => {
 
   // feishu notify
   const feishuNotify = async () => {
-    const feishu = await env.cookies.get("feishu")
+    const feishu = await env.data.get("feishu")
     if (feishu) {
       const feishuUrl = `https://open.feishu.cn/open-apis/bot/v2/hook/${lark}`
       // post
