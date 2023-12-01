@@ -1,24 +1,35 @@
 import notify from "../notify"
 
 // megstudio check in
-const megstudio = async env => {
-  const userinfo = await env.data.get("megstudio")
-  if (!userinfo) {
+const megstudio = async (env: any) => {
+  const usernameStr = await env.data.get("megstudio_username")
+  if (!usernameStr) {
     return false
   }
-  const ocr_url = await env.data.get("ocr_url")
-  if (!ocr_url) {
+  const passwordStr = await env.data.get("megstudio_password")
+  if (!passwordStr) {
+    return false
+  }
+  const ocrUrl = await env.data.get("ocr_url")
+  if (!ocrUrl) {
     return false
   }
 
-  let accounts = userinfo.split(";")
+  const usernames = usernameStr.split(";")
+  const passwords = passwordStr.split(";")
+  if (usernames.length !== passwords.length) {
+    return false
+  }
+
   const message: string[] = []
-  for (const accountInfo of accounts) {
-    const [username, password] = accountInfo.split(",")
+  for (let i = 0; i < usernames.length; i++) {
+    const username = usernames[i].trim()
+    const password = passwords[i].trim()
+
     if (!username || !password) {
       continue
     }
-    const success = await task(username, password, ocr_url)
+    const success = await task(username, password, ocrUrl)
     message.push(`${username} 签到${success ? "成功" : "失败"} \n`)
   }
 
@@ -26,9 +37,9 @@ const megstudio = async env => {
   return true
 }
 
-const task = async (username, password, ocr_url) => {
+const task = async (username: string, password: string, ocrUrl: string) => {
   // base64 string to uint8array
-  const b64decode = base64String => {
+  const b64decode = (base64String: string) => {
     const binaryString = atob(base64String)
     const length = binaryString.length
     const uint8Array = new Uint8Array(length)
@@ -41,15 +52,19 @@ const task = async (username, password, ocr_url) => {
   }
 
   // checkin
-  const checkin = async (uid, token, cookie) => {
-    const checkin_api = `https://studio.brainpp.com/api/v1/users/${uid}/point-actions/checkin`
+  const checkin = async (
+    uid: number | string,
+    token: string,
+    cookie: string
+  ) => {
+    const checkinApi = `https://studio.brainpp.com/api/v1/users/${uid}/point-actions/checkin`
     const headers = {
       Referer: "https://studio.brainpp.com/",
       "X-Csrf-Token": token,
       Cookie: cookie,
     }
 
-    const response = await fetch(checkin_api, {
+    const response = await fetch(checkinApi, {
       method: "POST",
       headers: headers,
     })
@@ -66,49 +81,49 @@ const task = async (username, password, ocr_url) => {
 
   // login
   const login = async () => {
-    const login_url =
+    const loginUrl =
       "https://studio.brainpp.com/api/authv1/login?redirectUrl=https://studio.brainpp.com/"
-    const login_response = await fetch(login_url)
-    if (login_response.status !== 200) {
+    const loginResponse = await fetch(loginUrl)
+    if (loginResponse.status !== 200) {
       return { success: false, message: "MegStudio 无法获取登录信息" }
     }
 
-    const parsed_url = new URL(login_response.url)
-    const query_params = parsed_url.searchParams
-    const login_challenge_value = query_params.get("login_challenge") || ""
-    if (!login_challenge_value) {
+    const parsedUrl = new URL(loginResponse.url)
+    const queryParams = parsedUrl.searchParams
+    const loginChallengeValue = queryParams.get("login_challenge") || ""
+    if (!loginChallengeValue) {
       return {
         success: false,
         message: "MegStudio 无法获取 login_challenge 参数值",
       }
     }
 
-    const current_time = String(Math.floor(Date.now()))
-    const captcha_url = `https://account.megvii.com/api/v1/captcha?endpoint=login&_t=${current_time}`
+    const currentTime = String(Math.floor(Date.now()))
+    const captchaUrl = `https://account.megvii.com/api/v1/captcha?endpoint=login&_t=${currentTime}`
 
-    const captcha_response = await fetch(captcha_url)
-    const captcha_data: any = await captcha_response.json()
-    if (captcha_data.error_code !== 0) {
+    const captchaResponse = await fetch(captchaUrl)
+    const captchaData: any = await captchaResponse.json()
+    if (captchaData.error_code !== 0) {
       return {
         success: false,
         message: "MegStudio 无法获取验证码信息",
       }
     }
 
-    const biz_id = captcha_data.data.biz_id
-    const image_base64 = captcha_data.data.image
-    const image_data = b64decode(image_base64)
+    const bizId = captchaData.data.biz_id
+    const imageBase64 = captchaData.data.image
+    const imageData = b64decode(imageBase64)
 
-    // const imageBuffer = Buffer.from(image_data, 'base64');
+    // const imageBuffer = Buffer.from(imageData, 'base64');
     const formData = new FormData()
-    formData.append("image", new Blob([image_data]), "captcha.png")
+    formData.append("image", new Blob([imageData]), "captcha.png")
 
-    const captcha_response_code = await fetch(`${ocr_url}/ocr/file`, {
+    const captchaResponseCode = await fetch(`${ocrUrl}/ocr/file`, {
       method: "POST",
       body: formData,
     })
 
-    const captcha = await captcha_response_code.text()
+    const captcha = await captchaResponseCode.text()
     // console.log(`captcha: ${captcha}`)
     if (captcha == "" || captcha.length != 4) {
       return {
@@ -117,111 +132,111 @@ const task = async (username, password, ocr_url) => {
       }
     }
 
-    const login_api = "https://account.megvii.com/api/v1/login"
+    const loginApi = "https://account.megvii.com/api/v1/login"
     const headers = {
       Referer: "https://studio.brainpp.com/",
       "Content-Type": "application/json",
     }
 
-    const login_data = {
+    const loginData = {
       username: username,
       password: password,
       code: captcha,
-      biz_id: biz_id,
-      login_challenge: login_challenge_value,
+      biz_id: bizId,
+      login_challenge: loginChallengeValue,
     }
 
-    const login_data_response = await fetch(login_api, {
+    const loginDataResponse = await fetch(loginApi, {
       method: "POST",
       headers: headers,
-      body: JSON.stringify(login_data),
+      body: JSON.stringify(loginData),
     })
-    if (login_data_response.status !== 200) {
+    if (loginDataResponse.status !== 200) {
       return {
         success: false,
-        message: `MegStudio 登录失败: ${await login_data_response.text()}`,
+        message: `MegStudio 登录失败: ${await loginDataResponse.text()}`,
       }
     }
 
-    const login_resp: any = await login_data_response.json()
-    if (login_resp.error_code !== 0) {
+    const loginResp: any = await loginDataResponse.json()
+    if (loginResp.error_code !== 0) {
       return {
         success: false,
-        message: `MegStudio 登录失败: ${login_resp.error_msg}`,
+        message: `MegStudio 登录失败: ${loginResp.error_msg}`,
       }
     }
-    if (login_resp.data.code !== 0) {
+    if (loginResp.data.code !== 0) {
       return {
         success: false,
-        message: `MegStudio 登录失败: ${login_resp.data.code}`,
+        message: `MegStudio 登录失败: ${loginResp.data.code}`,
       }
     }
-    const redirect_url = login_resp.data.redirect
-    let session_cookie = login_data_response.headers.get("Set-Cookie") || ""
+    const redirectUrl = loginResp.data.redirect
+    let sessionCookie = loginDataResponse.headers.get("Set-Cookie") || ""
     // allow_redirects 设置为 False，避免重定向请求
-    let response = await fetch(redirect_url, {
+    let response = await fetch(redirectUrl, {
       method: "GET",
       headers: {
-        Cookie: session_cookie,
+        Cookie: sessionCookie,
       },
       redirect: "manual",
     })
-    session_cookie = response.headers.get("Set-Cookie") || ""
-    // console.log(`session_cookie: ${session_cookie}`)
+    sessionCookie = response.headers.get("Set-Cookie") || ""
+    // console.log(`sessionCookie: ${sessionCookie}`)
 
     // 处理多级 302 跳转
     while (response.status === 302) {
       // 获取当前响应的 URL
-      const current_url = response.headers.get("Location") || ""
-      if (!current_url) {
+      const currentUrl = response.headers.get("Location") || ""
+      if (!currentUrl) {
         break
       }
-      // console.log(current_url);
+      // console.log(currentUrl);
 
       // 发送下一次跳转请求，继续禁用自动跟踪重定向
-      response = await fetch(current_url, {
+      response = await fetch(currentUrl, {
         method: "GET",
         headers: {
-          Cookie: session_cookie,
+          Cookie: sessionCookie,
         },
         redirect: "manual",
       })
-      const current_cookie = response.headers.get("Set-Cookie")
-      if (current_cookie) {
-        session_cookie = current_cookie
+      const currentCookie = response.headers.get("Set-Cookie")
+      if (currentCookie) {
+        sessionCookie = currentCookie
       }
     }
 
-    const resp_text = await response.text()
+    const respText = await response.text()
     // 从网页源码中获取 X-CSRF-Token
-    const csrf_token_match = /<meta name=X-CSRF-Token content="([^"]+)"/.exec(
-      resp_text
+    const csrfTokenMatch = /<meta name=X-CSRF-Token content="([^"]+)"/.exec(
+      respText
     )
-    if (!csrf_token_match) {
+    if (!csrfTokenMatch) {
       return {
         success: false,
         message: "MegStudio 无法获取 X-CSRF-Token",
       }
     }
-    const csrf_token = csrf_token_match[1]
-    if (!csrf_token) {
+    const csrfToken = csrfTokenMatch[1]
+    if (!csrfToken) {
       return {
         success: false,
         message: "MegStudio 无法获取 X-CSRF-Token 值",
       }
     }
 
-    const req_headers = {
-      "X-Csrf-Token": csrf_token,
-      Cookie: session_cookie,
+    const reqHeaders = {
+      "X-Csrf-Token": csrfToken,
+      Cookie: sessionCookie,
     }
-    // console.log(`headers: ${JSON.stringify(req_headers)}`)
+    // console.log(`headers: ${JSON.stringify(reqHeaders)}`)
 
     // 获取用户信息
-    const userinfo_api = "https://studio.brainpp.com/api/v1/users/0"
-    response = await fetch(userinfo_api, {
+    const userinfoApi = "https://studio.brainpp.com/api/v1/users/0"
+    response = await fetch(userinfoApi, {
       method: "GET",
-      headers: req_headers,
+      headers: reqHeaders,
     })
 
     if (response.status !== 200) {
@@ -230,9 +245,9 @@ const task = async (username, password, ocr_url) => {
         message: "MegStudio 获取用户信息失败",
       }
     }
-    const user_data: any = await response.json()
-    const uid = user_data.data.id
-    return checkin(uid, csrf_token, session_cookie)
+    const userData: any = await response.json()
+    const uid = userData.data.id
+    return checkin(uid, csrfToken, sessionCookie)
   }
 
   // failed. retry 5 times

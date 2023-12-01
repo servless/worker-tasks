@@ -1,28 +1,34 @@
 import notify from "../notify"
 
 // find domains
-const domain = async env => {
+const domain = async (env: any) => {
   const findomain = await env.data.get("domains")
   if (!findomain) {
     return false
   }
 
-  const domains = findomain.split(",")
+  const domains = findomain.split(";")
   console.log(domains)
   if (domains.length === 0) {
     return false
   }
 
   const message: string[] = []
+  let sound = "" // minuet.caf
   for (const domainName of domains) {
-    message.push((await task(domainName)) + "\n")
+    const [msg, available] = await task(domainName)
+    message.push(msg + "\n")
+    // 若有一个域名可注册，均播放铃声
+    if (available) {
+      sound = "bell.caf"
+    }
   }
 
-  await notify(env, "「Find Domain」\n" + message.join(""))
+  await notify(env, "「Find Domain」\n" + message.join(""), { sound: sound })
   return true
 }
 
-const task = async domainName => {
+const task = async (domainName: string) => {
   const headers = {
     accept: "application/json, text/javascript, */*; q=0.01",
     "accept-encoding": "gzip, deflate, br",
@@ -43,7 +49,7 @@ const task = async domainName => {
   }
 
   const ispUrl = "https://www.west.xyz"
-  const reqUrl = `${ispUrl}/web/whois/whoisinfo?domain=${domainName}&server=&refresh=0`
+  const reqUrl = `${ispUrl}/web/whois/whoisinfo?domain=${domainName}&server=&refresh=1`
 
   let available = false
   let regdate = ""
@@ -57,7 +63,6 @@ const task = async domainName => {
     }
 
     const resp: any = await response.json()
-
     if (resp.code === 200 || resp.code === 100) {
       available = resp.regdate === ""
       status = resp.status
@@ -69,15 +74,18 @@ const task = async domainName => {
       throw new Error(`resp code ${resp.code}`)
     }
   } catch (e) {
-    console.log(`Error: find domain: ${domainName}, err:${e}`)
+    console.error(`Error: find domain: ${domainName}, err:${e}`)
     regdate = ""
     expdate = ""
     available = false
   }
 
-  return `${domainName} ${
-    available ? "可" : "不可"
-  }注册，过期时间（${expdate}），状态（${status}）`
+  return [
+    `${domainName} ${
+      available ? "可" : "不可"
+    }注册，过期时间（${expdate}），状态（${status}）`,
+    available,
+  ]
   // return available
 }
 

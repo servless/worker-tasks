@@ -1,7 +1,7 @@
 import notify from "../notify"
 
 // v2ex check in
-const v2ex = async env => {
+const v2ex = async (env: any) => {
   const cookie = await env.data.get("v2ex")
   if (!cookie) {
     return false
@@ -16,7 +16,7 @@ const v2ex = async env => {
   }
 }
 
-const task = async cookie => {
+const task = async (cookie: string) => {
   const userAgent =
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36"
   const v2exDomain = "https://www.v2ex.com"
@@ -50,9 +50,11 @@ const task = async cookie => {
     const once = result[1]
     response = await fetch(`${redeemUrl}?once=${once}`, { headers })
     html = await response.text()
+    console.log(1, html)
 
     response = await fetch(dailyUrl, { headers })
     html = await response.text()
+    console.log(2, html)
 
     if (html.includes("每日登录奖励已领取")) {
       return { success: true, message: "每日登录奖励领取成功" }

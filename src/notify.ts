@@ -1,11 +1,28 @@
 // notify
-const notify = async (env, msg) => {
+const notify = async (env: any, msg: string, options: any = {}) => {
+  const { title, badge, sound, icon, group, url } = options
+
   // bark notify
   const barkNotify = async () => {
-    const bark = await env.data.get("bark")
-    if (bark) {
-      const barkUrl = `https://api.day.app/${bark}/${encodeURIComponent(msg)}`
-      const response = await fetch(barkUrl)
+    const token = await env.data.get("bark")
+    if (token) {
+      const data = {
+        body: msg,
+        device_key: token,
+      }
+      title && (data["title"] = title)
+      sound && (data["sound"] = sound)
+      group && (data["group"] = group)
+      url && (data["url"] = url)
+
+      const pushUrl = "https://api.day.app/push"
+      const response = await fetch(pushUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
       return response.status === 200
     }
     return false
@@ -13,18 +30,16 @@ const notify = async (env, msg) => {
 
   // lark notify
   const larkNotify = async () => {
-    const lark = await env.data.get("lark")
-    if (lark) {
-      const larkUrl = `https://open.larksuite.com/open-apis/bot/v2/hook/${lark}`
-      // post
+    const token = await env.data.get("lark")
+    if (token) {
       const data = {
         msg_type: "text",
         content: {
           text: msg,
         },
       }
-      // post json data
-      const response = await fetch(larkUrl, {
+      const pushUrl = `https://open.larksuite.com/open-apis/bot/v2/hook/${token}`
+      const response = await fetch(pushUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -38,18 +53,16 @@ const notify = async (env, msg) => {
 
   // feishu notify
   const feishuNotify = async () => {
-    const feishu = await env.data.get("feishu")
-    if (feishu) {
-      const feishuUrl = `https://open.feishu.cn/open-apis/bot/v2/hook/${lark}`
-      // post
+    const token = await env.data.get("feishu")
+    if (token) {
       const data = {
         msg_type: "text",
         content: {
           text: msg,
         },
       }
-      // post json data
-      const response = await fetch(feishuUrl, {
+      const pushUrl = `https://open.feishu.cn/open-apis/bot/v2/hook/${token}`
+      const response = await fetch(pushUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

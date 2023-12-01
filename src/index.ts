@@ -3,7 +3,7 @@ import megstudio from "./checkin/megstudio"
 import domain from "./find/domain"
 
 export default {
-  async scheduled(event, env, ctx) {
+  async scheduled(event: any, env: any, ctx: any) {
     const results = await Promise.allSettled([
       // checkin
       v2ex(env),

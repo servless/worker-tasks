@@ -4,11 +4,11 @@
 
 ## 当前支持
 
-| 服务名称                                | 服务简介                     | 说明                                                                        |
-| :-------------------------------------- | :--------------------------- | :-------------------------------------------------------------------------- |
-| [MegStudio](https://studio.brainpp.com) | AI 免费算力                  | 账号与密码，需自建 [OCR API 服务](https://github.com/sml2h3/ocr_api_server) |
-| [v2ex](https://v2ex.com)                | 开发者社交平台               | 获取网页的 Cookie                                                           |
-| **域名可注册检测**                      | 查询单个或多个域名是否可注册 | 手动设置相关域名                                                            |
+| 任务名称                                    | 任务简介                     | 说明                                                                        |
+| :------------------------------------------ | :--------------------------- | :-------------------------------------------------------------------------- |
+| [MegStudio](https://studio.brainpp.com)签到 | AI 免费算力                  | 账号与密码，需自建 [OCR API 服务](https://github.com/sml2h3/ocr_api_server) |
+| [v2ex](https://v2ex.com)签到                | 开发者社交平台               | 获取网页的 Cookie                                                           |
+| **域名可注册检测**                          | 查询单个或多个域名是否可注册 | 手动设置相关域名                                                            |
 
 ## 布署教程
 
@@ -83,14 +83,15 @@
 
          # MegStudio
          ## 使用账号和密码，需要自建 OCR API 服务：https://github.com/sml2h3/ocr_api_server。
-         ## 支持多账号。用户名和密码之间使用分号分隔，多账号之间使用分号分隔。
-         wrangler kv:key put --binding=data 'megstudio' 'USERNAME1,PASSWORD1;USERNAME2,PASSWORD2''USERNAME'
+         ## 支持多账号。每个用户名之间、每个密码之间使用分号(;)分隔。
+         wrangler kv:key put --binding=data 'megstudio_username' 'USERNAME1;USERNAME2;USERNAME3'
+         wrangler kv:key put --binding=data 'megstudio_password' 'PASSWORD1;PASSWORD2;PASSWORD3'
          wrangler kv:key put --binding=data 'ocr_url' "https://ocr.xx.com"
 
          # Find Domains
          ## 查询域名是否可注册。
-         ## 支持多域名。域名之间使用逗号分隔。
-         wrangler kv:key put --binding=data 'domains' "example1.com,example1.com"
+         ## 支持多域名。域名之间使用分号(;)分隔。
+         wrangler kv:key put --binding=data 'domains' "example1.com;example2.com;example3.com"
 
       ```
 
