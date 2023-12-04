@@ -2,6 +2,10 @@
 
 基于 `CloudFlare Workers` 的自动化**任务**。
 
+- https://git.jetsung.com/idev/worker-tasks
+- https://framagit.org/idev/worker-tasks
+- https://github.com/idev-sig/worker-tasks
+
 ## 当前支持
 
 | 任务名称                                    | 任务简介                     | 说明                                                                        |
@@ -32,11 +36,7 @@
 4. 拉取本项目,并进入该项目目录：
 
    ```bash
-   # 国内
-   git clone https://jihulab.com/idevsig/worker-tasks.git
-
-   # 海外
-   git clone https://github.com/idevsig/worker-tasks.git
+   git clone https://github.com/idev-sig/worker-tasks.git
 
    cd worker-tasks
    ```
