@@ -2,10 +2,6 @@
 
 基于 `CloudFlare Workers` 的自动化**任务**。
 
-- https://git.jetsung.com/idev/worker-tasks
-- https://framagit.org/idev/worker-tasks
-- https://github.com/idev-sig/worker-tasks
-
 ## 当前支持
 
 | 任务名称                                    | 任务简介                     | 说明                                                                        |
@@ -14,7 +10,13 @@
 | [v2ex](https://v2ex.com)签到                | 开发者社交平台               | 获取网页的 Cookie                                                           |
 | **域名可注册检测**                          | 查询单个或多个域名是否可注册 | 手动设置相关域名                                                            |
 
-## 布署教程
+## 仓库镜像
+
+- https://git.jetsung.com/servless/worker-tasks
+- https://framagit.org/servless/worker-tasks
+- https://github.com/servless/worker-tasks
+
+## 部署教程
 
 1. 注册 [CloudFlare 账号](https://www.cloudflare.com/)，并且设置 **Workers** 域名 (比如：`xxx.workers.dev`)
 
@@ -36,7 +38,7 @@
 4. 拉取本项目,并进入该项目目录：
 
    ```bash
-   git clone https://github.com/idev-sig/worker-tasks.git
+   git clone https://github.com/servless/worker-tasks.git
 
    cd worker-tasks
    ```
