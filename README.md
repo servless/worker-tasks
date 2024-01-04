@@ -10,12 +10,6 @@
 | [v2ex](https://v2ex.com)签到                | 开发者社交平台               | 获取网页的 Cookie                                                           |
 | **域名可注册检测**                          | 查询单个或多个域名是否可注册 | 手动设置相关域名                                                            |
 
-## 仓库镜像
-
-- https://git.jetsung.com/servless/worker-tasks
-- https://framagit.org/servless/worker-tasks
-- https://github.com/servless/worker-tasks
-
 ## 部署教程
 
 1. 注册 [CloudFlare 账号](https://www.cloudflare.com/)，并且设置 **Workers** 域名 (比如：`xxx.workers.dev`)
@@ -27,12 +21,8 @@
 3. 登录 `Wrangler`（可能需要扶梯）：
 
    ```bash
-   # 登录，可能登录不成功
-   wrangler login
-
    # 若登录不成功，可能需要使用代理。
-   # 每个命令行前，均需要加 HTTP_PROXY=http://localhost:20171
-   HTTP_PROXY=http://localhost:20171 wrangler login
+   wrangler login
    ```
 
 4. 拉取本项目,并进入该项目目录：
@@ -222,21 +212,8 @@ wrangler kv:key delete --binding=data 'bark'
 
    按 `l` 显示相关的调试数据
 
-## Template: worker-typescript
+## 仓库镜像
 
-- https://github.com/cloudflare/workers-sdk/tree/main/templates
-
-```bash
-# full repository clone
-$ git clone --depth 1 https://github.com/cloudflare/workers-sdk
-
-# copy the "worker-typescript" example to "my-project" directory
-$ cp -rf workers-sdk/templates/worker-typescript my-project
-
-# setup & begin development
-$ cd my-project && npm install && npm run dev
-```
-
-```bash
-wrangler deploy
-```
+- https://git.jetsung.com/servless/worker-tasks
+- https://framagit.org/servless/worker-tasks
+- https://github.com/servless/worker-tasks
