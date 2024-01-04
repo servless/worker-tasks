@@ -12,6 +12,18 @@
 
 ## 部署教程
 
+### 通过 GitHub Actions 发布至 CloudFlare
+
+1. 从 CloudFlare 获取 `CLOUDFLARE_API_TOKEN` 值，并设置到项目。
+
+   > `https://github.com/<ORG>/<REPO>/settings/secrets/actions`
+
+2. 可选）。设置`别名`。创建 `KV`、，并绑定到此 Workers 服务。
+   - 2.1a 手动后台绑定，（`Settings` -> `Variables` -> `KV Namespace Bindings` -> `Add binding` -> `Variable name (data)`, `选择创建的 KV`）
+   - 2.1b 通过命令行创建。按照**本地部署**的第 6 步，创建和保存 `KV`
+
+### 本地部署到 CloudFlare
+
 1. 注册 [CloudFlare 账号](https://www.cloudflare.com/)，并且设置 **Workers** 域名 (比如：`xxx.workers.dev`)
 
 2. 安装 [Wrangler 命令行工具](https://developers.cloudflare.com/workers/wrangler/)。
